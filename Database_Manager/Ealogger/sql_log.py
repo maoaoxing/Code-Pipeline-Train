@@ -3,12 +3,35 @@ from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.orm import sessionmaker, declarative_base
 import datetime
+import json
 
-from .sql_base import delete_db
-from .utils import finish_ini_logger_sql_db
+logger_config = json.load(open("configs/logger.json"))
 
 # 声明一个全局的 SQLAlchemy 基类，用于映射数据库表
 Base = declarative_base()
+
+
+def finish_ini_logger_sql_db():
+    """初始化完成数据库后在配置文件中进行注册，防止覆盖创建"""
+    with open('configs/logger.json', 'r') as f:
+        config = json.load(f)
+        config['sqlite']['ini_statement'] = 1
+    with open('configs/logger.json', 'w') as f:
+        json.dump(config, f, indent=4, ensure_ascii=False)
+    LOGGER_INI_STATEMENT = True
+
+
+def delete_db(db_path: str = 'data/app.db') -> None:
+    """
+    删除数据库文件。如果文件不存在则记录日志说明无需删除。
+
+    :param db_path: 数据库文件路径
+    """
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        logger.info(f"已删除数据库文件: {db_path}")
+    else:
+        logger.info(f"数据库文件 {db_path} 不存在，无需删除")
 
 
 class Log(Base):
@@ -53,7 +76,7 @@ class log_DB:
         self.engine = None
         self.session = None
         # 如果未完成初始化 (INI_STATEMENT=False) 或强制重建，则删除旧库并创建新表
-        from .constants import LOGGER_INI_STATEMENT
+        LOGGER_INI_STATEMENT = bool(logger_config["sqlite"]["ini_statement"])
         if not LOGGER_INI_STATEMENT or forced_formatting:
             delete_db(db_path)
             self._create_and_bind_engine(echo)

@@ -1,4 +1,4 @@
-from SQLite_db import log_DB
+from .sql_log import log_DB
 
 
 class sql_logger:
@@ -7,7 +7,7 @@ class sql_logger:
         self.module_name = module_name
         self.logger = log_DB()
 
-    def info(self, log_content: str) -> None:
+    def info(self, log_content: str = "未成功记录") -> None:
         self.logger.add_log(self.module_name, 'info', log_content)
 
     def debug(self, log_content: str) -> None:
